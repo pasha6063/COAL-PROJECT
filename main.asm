@@ -41,7 +41,7 @@ main proc
                         call print_string
 
     ; Output stored choice
-                        mov  dl, choice                  ; Move the stored choice into DL
+                        mov  dl, choice               ; Move the stored choice into DL
                         call print_choice
 
     ; Wait for key press before exiting
@@ -92,9 +92,9 @@ display_menu proc
                         call print_string
 
     ; Prompt for choice and store it in the choice variable
-                        mov  ah, 1                       ; Function to read character
+                        mov  ah, 1                    ; Function to read character
                         int  21h
-                        mov  choice, al                  ; Store the choice in choice variable
+                        mov  choice, al               ; Store the choice in choice variable
 
                         ret
 display_menu endp
@@ -106,14 +106,14 @@ print_string proc
                         ret
 print_string endp
 newline proc
-    mov dl, 13               ; Carriage return
-    mov ah, 2                ; Function to display character
-    int 21h
+                        mov  dl, 13                   ; Carriage return
+                        mov  ah, 2                    ; Function to display character
+                        int  21h
 
-    mov dl, 10               ; Line feed
-    mov ah, 2                ; Function to display character
-    int 21h
-    ret
+                        mov  dl, 10                   ; Line feed
+                        mov  ah, 2                    ; Function to display character
+                        int  21h
+                        ret
 newline endp
 
 
@@ -125,66 +125,66 @@ print_choice proc
 print_choice endp
 
 user_authentication proc
-                        mov  cx, 3                       ; Set the number of attempts to 3
+                        mov  cx, 3                    ; Set the number of attempts to 3
 
     auth_loop:          
     ; Display prompt message
-                        mov  dx, offset prompt_msg
+                        lea  dx, prompt_msg
                         call print_string
-                        call newline                     ; Move to new line after prompt
 
-    ; Read user input (3 characters for password)
-                        mov  si, offset input            ; Set SI to input buffer
-
-    ; Loop to read 3 characters and store in the input array
-                        mov  bx, 3                       ; Password length
-    read_chars:         
-                        mov  ah, 1                       ; Function to read single character
+    ; Read single-character password input (3 characters in total)
+                        mov  ah, 1                    ; Function to read character
                         int  21h
-                        add  al, '0'                     ; Convert input to ASCII
-                        mov  [si], al                    ; Store character in input buffer
-                        inc  si                          ; Move to next position in buffer
-                        dec  bx                          ; Decrement character count
-                        jnz  read_chars                  ; Loop until all characters are read
+                        sub  al, 30h                  ; Convert ASCII to numerical if needed
+                        mov  input[0], al             ; Store first character of password
 
-    ; Reset SI to start of input and compare with password
-                        mov  si, offset input
-                        mov  di, offset password
-                        mov  cx, 3                       ; Length of password for comparison
-                        repe cmpsb                       ; Compare input with password
-                        jne  incorrect                   ; If password is incorrect, jump to `incorrect`
+                        int  21h
+                        sub  al, 30h
+                        mov  input[1], al             ; Store second character of password
 
-    success:            
-                        mov  dx, offset success_msg
+                        int  21h
+                        sub  al, 30h
+                        mov  input[2], al             ; Store third character of password
+
+    ; Compare user input to the password
+                        lea  si, input
+                        lea  di, password
+                        mov  cx, 3                    ; Compare 3 characters
+
+                        repe cmpsb                    ; Compare input with password
+                        je   auth_success             ; If password matches, jump to success
+
+    ; Password incorrect
+                        dec  cx                       ; Decrement remaining attempts
+                        call newline                  ; New line
+                        lea  dx, error_msg
                         call print_string
-                        call newline
-                        ret
-
-    incorrect:          
-    ; Password incorrect, decrement attempts and show error message
-                        dec  cx
-                        cmp  cx, 0
-                        je   terminate                   ; If attempts reach 0, terminate
-
-    ; Display error message
-                        mov  dx, offset error_msg
-                        call print_string
-                        call newline
 
     ; Display remaining attempts
-                        mov  al, cl
-                        add  al, '0'                     ; Convert remaining attempts to ASCII
-                        mov  dl, al
-                        call print_choice                ; Display remaining attempts
-                        call newline                     ; New line after attempt count
+                        mov  dl, '0'
+                        add  dl, cl                   ; Convert attempts to ASCII
+                        mov  ah, 2                    ; Display character
+                        int  21h
 
-                        jmp  auth_loop                   ; Retry loop
+                        call newline                  ; New line
 
-    terminate:          
-                        mov  dx, offset terminate_msg
-                        call print_string
+    ; Check if no attempts are left
+                        cmp  cl, 0
+                        je   auth_terminate           ; If no attempts left, terminate
+
+                        jmp  auth_loop                ; Retry loop
+
+    auth_success:       
                         call newline
-                        mov  ah, 4Ch                     ; DOS interrupt to exit program
+                        lea  dx, success_msg
+                        call print_string
+                        ret
+
+    auth_terminate:     
+                        call newline
+                        lea  dx, terminate_msg
+                        call print_string
+                        mov  ax, 4C00h                ; Exit program
                         int  21h
 user_authentication endp
 
