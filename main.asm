@@ -105,6 +105,17 @@ print_string proc
                         int  21h
                         ret
 print_string endp
+newline proc
+    mov dl, 13               ; Carriage return
+    mov ah, 2                ; Function to display character
+    int 21h
+
+    mov dl, 10               ; Line feed
+    mov ah, 2                ; Function to display character
+    int 21h
+    ret
+newline endp
+
 
 print_choice proc
     ; Print the user's choice
