@@ -125,61 +125,54 @@ print_choice proc
 print_choice endp
 
 user_authentication proc
-                        mov  cx, 3                    ; Set the number of attempts to 3
-
-    auth_loop:          
+    mov  cx, 3                    ; Set the number of attempts to 3
+auth_loop:
     ; Display prompt message
-                        lea  dx, prompt_msg
-                        call print_string
+    lea  dx, prompt_msg
+    call print_string
 
     ; Read 3-character password input
-                        mov  ah, 0Ah                  ; DOS interrupt for reading a string
-                        lea  dx, input                ; Load input buffer address
-                        int  21h
+    mov  ah, 0Ah                  ; DOS interrupt for reading a string
+    lea  dx, input                ; Load input buffer address
+    int  21h
 
     ; Compare input with password
-                        mov  si, offset input + 1     ; Set SI to start of user input (skip length byte)
-                        mov  di, offset password      ; Set DI to start of password
-                        mov  ax, cx                   ; Backup attempts counter in AX
+    mov  si, offset input + 2     ; Set SI to start of user input (after length byte and 1st byte)
+    mov  di, offset password      ; Set DI to start of password
+    mov  cx, 3                    ; Compare 3 characters
+    repe cmpsb                    ; Compare input with password
+    jne  incorrect_password       ; If mismatch, go to incorrect_password
 
-                        mov  cx, 3                    ; Compare 3 characters
-                        repe cmpsb                    ; Compare input with password
-                        je   auth_success             ; If they match, jump to auth_success
+auth_success:
+    call newline                  ; New line
+    lea  dx, success_msg
+    call print_string
+    ret                           ; Return to main after successful authentication
 
-    ; If password is incorrect
-                        mov  cx, ax                   ; Restore attempts counter
-                        dec  cx                       ; Decrement attempts counter
-
-                        call newline                  ; New line
-                        lea  dx, error_msg
-                        call print_string
+incorrect_password:
+    dec  cx                       ; Decrement attempts
+    call newline                  ; New line
+    lea  dx, error_msg
+    call print_string
 
     ; Display remaining attempts
-                        mov  dl, '0'
-                        add  dl, cl                   ; Convert remaining attempts to ASCII
-                        mov  ah, 2                    ; Display character
-                        int  21h
-
-                        call newline                  ; New line
+    mov  dl, '0'
+    add  dl, cl                   ; Convert remaining attempts to ASCII
+    mov  ah, 2                    ; Display character
+    int  21h
+    call newline                  ; New line
 
     ; Check if no attempts are left
-                        cmp  cx, 0
-                        je   auth_terminate           ; If no attempts left, terminate
+    cmp  cl, 0
+    je   auth_terminate           ; If no attempts left, terminate
+    jmp  auth_loop                ; Retry loop
 
-                        jmp  auth_loop                ; Retry loop
-
-    auth_success:       
-                        call newline                  ; New line
-                        lea  dx, success_msg
-                        call print_string
-                        ret                           ; Return to main after successful authentication
-
-    auth_terminate:     
-                        call newline
-                        lea  dx, terminate_msg
-                        call print_string
-                        mov  ax, 4C00h                ; Exit program
-                        int  21h
+auth_terminate:
+    call newline
+    lea  dx, terminate_msg
+    call print_string
+    mov  ax, 4C00h                ; Exit program
+    int  21h
 user_authentication endp
 
 end main
