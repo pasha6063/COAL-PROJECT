@@ -132,37 +132,34 @@ user_authentication proc
                         lea  dx, prompt_msg
                         call print_string
 
-    ; Read single-character password input (3 characters in total)
-                        mov  ah, 1                    ; Function to read character
+    ; Read 3-character password input
+                        mov  ah, 0Ah                  ; DOS interrupt for reading a string
+                        lea  dx, input                ; Load input buffer address
                         int  21h
-                        sub  al, 30h                  ; Convert ASCII to numerical if needed
-                        mov  input[0], al             ; Store first character of password
 
-                        int  21h
-                        sub  al, 30h
-                        mov  input[1], al             ; Store second character of password
-
-                        int  21h
-                        sub  al, 30h
-                        mov  input[2], al             ; Store third character of password
-
-    ; Compare user input to the password
-                        lea  si, input
-                        lea  di, password
+    ; Compare input with password
+                        mov  si, offset input + 1     ; Set SI to start of user input (skip length byte)
+                        mov  di, offset password      ; Set DI to start of password
                         mov  cx, 3                    ; Compare 3 characters
 
                         repe cmpsb                    ; Compare input with password
-                        je   auth_success             ; If password matches, jump to success
+                        jne  incorrect_password       ; If mismatch, go to incorrect_password
 
-    ; Password incorrect
-                        dec  cx                       ; Decrement remaining attempts
+    auth_success:       
+                        call newline                  ; New line
+                        lea  dx, success_msg
+                        call print_string
+                        ret                           ; Return to main after successful authentication
+
+    incorrect_password: 
+                        dec  cx                       ; Decrement attempts
                         call newline                  ; New line
                         lea  dx, error_msg
                         call print_string
 
     ; Display remaining attempts
                         mov  dl, '0'
-                        add  dl, cl                   ; Convert attempts to ASCII
+                        add  dl, cl                   ; Convert remaining attempts to ASCII
                         mov  ah, 2                    ; Display character
                         int  21h
 
@@ -173,12 +170,6 @@ user_authentication proc
                         je   auth_terminate           ; If no attempts left, terminate
 
                         jmp  auth_loop                ; Retry loop
-
-    auth_success:       
-                        call newline
-                        lea  dx, success_msg
-                        call print_string
-                        ret
 
     auth_terminate:     
                         call newline
