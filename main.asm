@@ -1,357 +1,113 @@
 .model small
 .stack 100h
 .data
-    fname         db 'contacts.txt', 0
-    handle        dw ?
-
-    ; Menu's main options
-    welcome       db 10,13,'|>~~~~~~~~~~~~~~~~~~~~~~CONTACT MANAGEMENT SYSTEM~~~~~~~~~~~~~~~~~~~~~~~~<|'
-                  db 10,13,'|            RIPHAH INTERNATIONAL UNIVERSTY |'
-                  db 10,13,'|            COURSE:                                                   |'
-                  db 10,13,'|                    COMPUTER ORGANIZATION AND ASSEMBLY LANGUAGE       |'
-                  db 10,13,'|            INSTRUCTOR:                                               |'
-                  db 10,13,'|                             SIR PASHA                        |'
-                  db 10,13,'|                                   BSSE                           |'
-                  db 10,13,'~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-                  db 10,13,10,13,'Press Enter to move forward>>>>>>$'
-
-    heading       db 10,13,10,13,'                |**********CONTACT MANAGEMENT SYSTEM***********|'
-                  db 10,13,'                |0. Exit                                        |'
-                  db 10,13,'                |1. Add New Contact                             |'
-                  db 10,13,'                |2. View Contact Details                        |'
-                  db 10,13,'                |3. Update Contact                              |'
-                  db 10,13,'                |4. Delete Contact                              |'
-                  db 10,13,'                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$'
-                  
-    inputmsg      db 10,13,10,13,'Choose an option >> $'
-      
-    ; Data details
-    strName       db 'Enter Contact Name: $'
-    strPhone      db 'Enter Contact Phone: $'
-    strEmail      db 'Enter Contact Email: $'
-
-    ; Temporary storage for contact data
-    contactName   db 28 dup(' '), 0
-    contactPhone  db 15 dup(' '), 0
-    contactEmail  db 30 dup(' '), 0
-
-    ; Display messages
-    exitmsg       db 10,13,10,13, '               ~~~~~~~~~~~~~CONTACT MANAGEMENT SYSTEM CLOSED~~~~~~~~~~~~~~~ $'
-    addmsg        db 10,13, '               **ADD NEW CONTACT** $'
-    detailmsg     db 10,13, '               **CONTACT DETAILS** $'
-    deletemsg     db 10,13, '               **DELETE CONTACT**  $'
-    updatemsg     db 10,13, '               **UPDATE CONTACT**  $'
-
-    delete_done   db 10,13, 'Contact Deleted Successfully $'
-    update_done   db 10,13, 'Contact Updated Successfully $'
-    add_done      db 10,13, 'Contact Added Successfully $'
-    invalidoption db 10,13, 'Invalid option!$'
-    not_found     db 10,13, 'Contact not found!$'
+    ; Menu text data
+    line1 db 13, 10, " _____________________________________", 13, 10, "$"
+    line2 db "|            Phone Book               |", 13, 10, "$"
+    line3 db "|_____________________________________|", 13, 10, "$"
+    line4 db "|   |                                 |", 13, 10, "$"
+    line5 db "| 1 |  New Contact                    |", 13, 10, "$"
+    line6 db "| 2 |  Edit a contact                 |", 13, 10, "$"
+    line7 db "| 3 |  Search Contact                 |", 13, 10, "$"
+    line8 db "| 4 |  List all Contacts              |", 13, 10, "$"
+    line9 db "| 0 |  Exit                           |", 13, 10, "$"
+    line10 db "|   |                                 |", 13, 10, "$"
+    line11 db "|___|_________________________________|", 13, 10, "$"
+    line12 db "Press a key to continue : $"
+    choice_msg db 13, 10, "Your choice is: $"
 
 .code
 main proc
-    mov  ax,@data
-    mov  ds,ax
+    mov ax, @data
+    mov ds, ax
 
-    ; Displaying menu
-    more: 
-        lea  dx,welcome
-        mov  ah,09
-        int  21h
+    ; Call the display menu procedure
+    call display_menu
 
-        mov  ah,01
-        int  21h
-        cmp  al,13
-        jne  more
+    ; Print the user's choice
+    mov dx, offset choice_msg
+    call print_string
+    mov dl, al             ; Move the user's choice into DL for printing
+    call print_choice
 
-    Invalid: 
-        lea  dx,heading
-        call string_output
+    ; Wait for key press before exiting
+    mov ah, 1
+    int 21h
 
-        ; Display the input prompt
-        lea  dx,inputmsg
-        mov  ah,09
-        int  21h
-
-        mov  ah,01h               ; Taking user input
-        int  21h
-        sub  al,30h
-
-        cmp  al,0                 ; Exit the program
-        je   ext
-
-        cmp  al,1                 ; Add new contact
-        je   write_data
-
-        cmp  al,2                 ; View contact details
-        je   read_data
-
-        cmp  al,3                 ; Update contact
-        je   update_data
-
-        cmp  al,4                 ; Delete contact
-        je   delete_data
-
-        lea  dx,invalidoption
-        mov  ah,09
-        int  21h
-        j ne  Invalid
-
-    write_data: 
-        lea  dx,addmsg
-        mov  ah,09
-        int  21h
-
-        call input_form_user
-        call writing_in_file
-
-        lea  dx,add_done
-        mov  ah,09
-        int  21h
-        jmp  ext
-
-    read_data : 
-        lea  dx, detailmsg
-        mov  ah,09
-        int 21h
-        call new_line
-
-        lea  dx,strName
-        call string_output
-        lea  di,contactName
-        call string_input
-        call read_from_file
-        jmp  ext
-
-    update_data: 
-        lea  dx, updatemsg
-        mov  ah,09
-        int  21h
-
-        call new_line
-        lea  dx,strName
-        call string_output
-        lea  di,contactName
-        call string_input
-        call update_in_file
-
-        lea  dx,update_done
-        mov  ah,09
-        int  21h
-        jmp  ext
-
-    delete_data: 
-        lea  dx, deletemsg
-        mov  ah,09
-        int  21h
-        call new_line
-
-        lea  dx,strName
-        call string_output
-        lea  di,contactName
-        call string_input
-
-        call delete_from_file
-
-        lea  dx, delete_done
-        mov  ah,09
-        int  21h
-
-    ext: 
-        lea  dx,exitmsg
-        mov  ah,09
-        int  21h
-
-        mov  ah,4ch
-        int  21h
+    ; Exit program
+    mov ah, 4Ch
+    int 21h
 main endp
 
-; Procedures for input/output operations
-string_input proc
-    mov  cx,0
-aa: 
-    mov  ah,01h
-    int  21h
-    cmp  al,13
-    je   exit
-    mov  [di],al
-    inc  cx
-    inc  di
-    jmp  aa
-exit: 
-    ret
-string_input endp
+display_menu proc
+    ; Display each line of the menu
+    call print_newline
+    mov dx, offset line1
+    call print_string
 
-string_output proc
-    mov  ah,09h
-    int  21h
-    ret
-string_output endp
+    mov dx, offset line2
+    call print_string
 
-file_output proc
-    mov  ah,40h
-    mov  bx,handle
-    int  21h
-    ret
-file_output endp
+    mov dx, offset line3
+    call print_string
 
-file_input proc
-    mov  ah,3fh
-    mov  bx,handle
-    int  21h
-    ret
-file_input endp
+    mov dx, offset line4
+    call print_string
 
-new_line proc
-    mov  dl,10
-    mov  ah,02h
-    int  21h
-    mov  dl,13
-    mov  ah,02h
-    int  21h
-    ret
-new_line endp
+    mov dx, offset line5
+    call print_string
 
-; Procedures for file operations
-read_from_file proc
-    ; Open existing file
-    lea  dx,fname
-    mov  ah,3dh
-    mov  al,0
-    int  21h
-    mov  handle,ax
+    mov dx, offset line6
+    call print_string
 
-    ; Read contact details from file
-    mov  cx,29d
-    lea  dx,contactName
-    call file_input
+    mov dx, offset line7
+    call print_string
 
-    ; Display contact details
-    lea  dx,contactName
-    call string_output
-    call new_line
+    mov dx, offset line8
+    call print_string
 
-    ; Close file
-    mov  dx,handle
-    mov  ah,3eh
-    int  21h
-    ret
-read_from_file endp
+    mov dx, offset line9
+    call print_string
 
-delete_from_file proc
-    ; Open existing file
-    lea  dx,fname
-    mov  ah,3dh
-    mov  al,0
-    int  21h
-    mov  handle,ax
+    mov dx, offset line10
+    call print_string
 
-    ; Read contact details from file
-    mov  cx,29d
-    lea  dx,contactName
-    call file_input
+    mov dx, offset line11
+    call print_string
+    
+    mov dx, offset line12
+    call print_string
 
-    ; Check if contact exists
-    lea  si,contactName
-    lea  di,contactName
-    mov  cx,29d
-    repe cmpsb
-    jne  not_found
-
-    ; Delete contact from file
-    mov  cx,29d
-    lea  dx,contactName
-    call file_output
-
-    ; Close file
-    mov  dx,handle
-    mov  ah,3eh
-    int  21h
-    ret
-
-not_found: 
-    lea  dx,not_found
-    mov  ah,09
-    int  21h
-    ret
-delete_from_file endp
-
-update_in_file proc
-    ; Open existing file
-    lea  dx,fname
-    mov  ah,3dh
-    mov  al,0
-    int  21h
-    mov  handle,ax
-
-    ; Read contact details from file
-    mov  cx,29d
-    lea  dx,contactName
-    call file_input
-
-    ; Check if contact exists
-    lea  si,contactName
-    lea  di,contactName
-    mov  cx,29d
-    repe cmpsb
-    jne  not_found
-
-    ; Update contact details
-    lea  dx,contactName
-    call string_output
-    call new_line
-
-    ; Close file
-    mov  dx,handle
-    mov  ah,3eh
-    int  21h
-    ret
-
-not_found: 
-    lea  dx,not_found
-    mov  ah,09
-    int  21h
-    ret
-update_in_file endp
-
-writing_in_file proc
-    ; Open existing file
-    lea  dx,fname
-    mov  ah,3dh
-    mov  al,1
-    int  21h
-    mov  handle,ax
-
-    ; Write contact details to file
-    mov  cx,29d
-    lea  dx,contactName
-    call file_output
-
-    ; Close file
-    mov  dx,handle
-    mov  ah,3eh
-    int  21h
-    ret
-writing_in_file endp
-
-input_form_user proc
-    ; Input contact details from user
-    lea  dx,strName
-    call string_output
-    lea  di,contactName
-    call string_input
-
-    lea  dx,strPhone
-    call string_output
-    lea  di,contactPhone
-    call string_input
-
-    lea  dx,strEmail
-    call string_output
-    lea  di,contactEmail
-    call string_input
+    ; Prompt for choice after the menu is displayed
+    mov ah, 1              ; Function to read character
+    int 21h
+    mov al, ah             ; Store the choice in AL
 
     ret
-input_form_user endp
+display_menu endp
+
+print_string proc
+    ; Print string pointed to by DX
+    mov ah, 09h
+    int 21h
+    ret
+print_string endp
+
+print_choice proc
+    ; Print the user's choice
+    mov ah, 02h
+    int 21h
+    ret
+print_choice endp
+
+print_newline proc
+    ; Print a new line
+    mov ah, 02h
+    mov dl, 13  ; Carriage return
+    int 21h
+    mov dl, 10  ; Line feed
+    int 21h
+    ret
+print_newline endp
 
 end main
