@@ -140,19 +140,16 @@ user_authentication proc
     ; Compare input with password
                         mov  si, offset input + 1     ; Set SI to start of user input (skip length byte)
                         mov  di, offset password      ; Set DI to start of password
+                        mov  ax, cx                   ; Backup attempts counter in AX
+
                         mov  cx, 3                    ; Compare 3 characters
-
                         repe cmpsb                    ; Compare input with password
-                        jne  incorrect_password       ; If mismatch, go to incorrect_password
+                        je   auth_success             ; If they match, jump to auth_success
 
-    auth_success:       
-                        call newline                  ; New line
-                        lea  dx, success_msg
-                        call print_string
-                        ret                           ; Return to main after successful authentication
+    ; If password is incorrect
+                        mov  cx, ax                   ; Restore attempts counter
+                        dec  cx                       ; Decrement attempts counter
 
-    incorrect_password: 
-                        dec  cx                       ; Decrement attempts
                         call newline                  ; New line
                         lea  dx, error_msg
                         call print_string
@@ -166,10 +163,16 @@ user_authentication proc
                         call newline                  ; New line
 
     ; Check if no attempts are left
-                        cmp  cl, 0
+                        cmp  cx, 0
                         je   auth_terminate           ; If no attempts left, terminate
 
                         jmp  auth_loop                ; Retry loop
+
+    auth_success:       
+                        call newline                  ; New line
+                        lea  dx, success_msg
+                        call print_string
+                        ret                           ; Return to main after successful authentication
 
     auth_terminate:     
                         call newline
