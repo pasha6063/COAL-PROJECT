@@ -15,7 +15,8 @@
     line11         db "|___|_________________________________|", 13, 10, "$"
     line12         db "Press a key to continue : $"
     choice_msg     db 13, 10, "Your choice is: $"
-    choice         db ?
+    choice         db ?     
+    
 
 
     prompt_msg     db 'Enter password: $'
