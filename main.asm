@@ -1,4 +1,4 @@
-.model small
+.model small              
 .stack 100h
 .data
     ; Menu text data
@@ -55,7 +55,7 @@ main proc
 main endp
 
 display_menu proc
-    ; Display each line of the menu
+    ; Display every line of the menu
                         mov  dx, offset line1
                         call print_string
 
@@ -119,7 +119,7 @@ newline endp
 
 
 print_choice proc
-    ; Print the user's choice
+                       ; Print the user's choice
                         mov  ah, 02h
                         int  21h
                         ret
@@ -135,7 +135,7 @@ auth_loop:
                         lea  dx, prompt_msg
                         call print_string
 
-                        ; Collect each character one by one
+                          ; Collect each character one by one
                         mov  ah, 1                    ; Function to read character from input
                         int  21h
                         mov  [si], al                 ; Store first character
