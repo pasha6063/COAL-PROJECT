@@ -1,4 +1,4 @@
-.model small              
+.model small
 .stack 100h
 .data
     ; Menu text data
@@ -18,10 +18,15 @@
     choice         db ?     
 
     ; Contact Data
-    contact_name   db 20 dup (' ')
+    contact_name   db 20 dup (' ')   ; Storage for the contact name (max 20 chars)
+    contact_number db 15 dup (' ')   ; Storage for the contact number (max 15 chars)
+    
     contact_msg    db 13, 10, "Enter contact name (max 20 chars): $"
+    number_msg     db 13, 10, "Enter contact number (max 15 chars): $"
     show_contact_msg db 13, 10, "Contact name: $"
+    show_number_msg db 13, 10, "Contact number: $"
     edit_contact_msg db 13, 10, "Edit contact name: $"
+    edit_number_msg db 13, 10, "Edit contact number: $"
     contact_deleted_msg db 13, 10, "Contact deleted.$"
     no_contact_msg db 13, 10, "No contact available.$"
     contact_exists db 0 ; flag to check if contact exists
@@ -71,37 +76,73 @@ add_contact:            mov  dx, offset contact_msg
                         lea  dx, contact_name
                         mov  cx, 20
                         call read_string
+
+                        mov  dx, offset number_msg
+                        call print_string
+
+                        lea  dx, contact_number
+                        mov  cx, 15
+                        call read_string
+
                         mov  contact_exists, 1
                         jmp  menu_loop
 
 edit_contact:           cmp  contact_exists, 0
                         je   no_contact
+
                         mov  dx, offset edit_contact_msg
                         call print_string
 
                         lea  dx, contact_name
                         mov  cx, 20
                         call read_string
+
+                        mov  dx, offset edit_number_msg
+                        call print_string
+
+                        lea  dx, contact_number
+                        mov  cx, 15
+                        call read_string
+
                         jmp  menu_loop
 
-show_contact:           cmp  contact_exists, 0
+show_contact:           
+                        cmp  contact_exists, 0
                         je   no_contact
+
+                        ; Display the contact name
                         mov  dx, offset show_contact_msg
                         call print_string
                         mov  dx, offset contact_name
                         call print_string
-                        jmp  menu_loop
+                        call newline  ; Add a new line after displaying the contact name
+
+                        ; Display the contact number
+                        mov  dx, offset show_number_msg
+                        call print_string
+                        mov  dx, offset contact_number
+                        call print_string
+                        call newline  ; Add a new line after displaying the contact number
+
+                        ; Return to the menu
+                        jmp menu_loop
+
 
 delete_contact:         cmp  contact_exists, 0
                         je   no_contact
+
                         mov  contact_exists, 0
                         mov  dx, offset contact_deleted_msg
                         call print_string
+
                         jmp  menu_loop
 
-no_contact:             mov  dx, offset no_contact_msg
+no_contact:             
+                        mov  dx, offset no_contact_msg
                         call print_string
-                        jmp  menu_loop
+                        call newline  ; Add a new line after the message
+                        jmp menu_loop
+
 
 exit_program:           mov  ah, 4Ch
                         int  21h
@@ -195,7 +236,7 @@ auth_loop:
                         lea  dx, prompt_msg
                         call print_string
 
-                          ; Collect each character one by one
+                        ; Collect each character one by one
                         mov  ah, 1                    ; Function to read character from input
                         int  21h
                         mov  [si], al                 ; Store first character
@@ -239,24 +280,22 @@ incorrect_password:
                         int  21h
 
                         call newline                  ; New line
+                        cmp  bx, 0                    ; Check if attempts exhausted
+                        je   terminate_program        ; Jump to termination if no attempts left
+                        jmp  auth_loop                ; Retry authentication
 
-                        ; Check if no attempts are left
-                        cmp  bx, 0
-                        je   auth_terminate           ; If no attempts left, terminate
-                        jmp  auth_loop                ; Retry loop
+terminate_program:
+                        lea  dx, terminate_msg        ; Display termination message
+                        call print_string
+                        mov  ah, 4Ch                  ; Exit program
+                        int  21h
 
 auth_success:
-                        call newline                  ; New line
+                        call newline
                         lea  dx, success_msg
                         call print_string
-                        ret                           ; Return to main after successful authentication
-
-auth_terminate:
-                        call newline
-                        lea  dx, terminate_msg
-                        call print_string
-                        mov  ax, 4C00h                ; Exit program
-                        int  21h
+                        ret
 user_authentication endp
+
 
 end main
