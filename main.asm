@@ -22,7 +22,7 @@
     welcome_text        db 13, 10, "       Welcome to Contact Book Application", 13, 10,13, 10, "$"
     created_by          db "  Created by:", 13, 10,13, 10, "$"
     abrar               db "  Abrar Ali                                 (55843)", 13, 10, "$"
-    ghaznfar            db "  Ghaznfar Pasha                            (55590)", 13, 10, "$"
+    ghaznfar            db "  Ghazanfar Pasha                            (55590)", 13, 10, "$"
     haroon              db "  Haroon Abbas                              (55780)", 13, 10, "$"
     saad                db "  Saad Ali                                  (56673)", 13, 10,13, 10, "$"
           
