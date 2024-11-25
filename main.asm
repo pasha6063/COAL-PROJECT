@@ -132,6 +132,151 @@ main proc
                            int  21h
 main endp
 
+add_contact proc
+    ; Prompt for name input
+                           mov  dx, offset prompt_name
+                           call print_string                     ; Print prompt for name
+
+    ; Initialize the buffer for storing the name
+                           lea  si, contact_name
+                           mov  cx, 30                           ; Set CX to the size of the name buffer
+
+    input_name_loop:       
+                           call get_char                         ; Call get_char to read a character
+                           cmp  al, 13                           ; Check if Enter key (Carriage return)
+                           je   name_input_complete              ; If Enter is pressed, finish input
+
+    ; Store the character in the contact_name buffer
+                           mov  [si], al
+                           inc  si                               ; Move to the next buffer position
+                           loop input_name_loop                  ; Continue loop until CX is zero
+
+    name_input_complete:   
+    ; Null-terminate the string
+                           mov  al, '$'
+                           mov  [si], al
+
+    ; Prompt for mobile number input
+                           mov  dx, offset prompt_mobile
+                           call print_string                     ; Print prompt for mobile number
+                           call get_mobile_number                ; Call procedure to get valid mobile number
+
+    ; Show success message
+                           mov  dx, offset success_msg_add
+                           call print_string                     ; Print success message
+
+                           ret
+add_contact endp
+
+    ; Mobile number input procedure
+get_mobile_number proc
+    ; Initialize the buffer for storing the mobile number
+                           mov  si, offset contact_phone         ; Point SI to mobile_number buffer
+                           mov  cx, 0                            ; Clear CX (for counting characters)
+
+    input_mobile_loop:     
+                           call get_char                         ; Call get_char to read a character
+                           cmp  al, 13                           ; Check if Enter key (Carriage return)
+                           je   validate_mobile                  ; If Enter is pressed, validate the number
+
+    ; Check if the character is a digit (ASCII values for '0' to '9' are 30h to 39h)
+                           cmp  al, '0'
+                           jl   invalid_char                     ; If less than '0', it's an invalid character
+                           cmp  al, '9'
+                           jg   invalid_char                     ; If greater than '9', it's an invalid character
+
+    ; If valid digit, store it in the mobile number buffer
+                           mov  [si], al
+                           inc  si                               ; Move to the next buffer position
+                           inc  cx                               ; Increment character count
+
+    ; Check if we've reached 11 digits (valid mobile number length)
+                           cmp  cx, 11
+                           je   validate_mobile                  ; If 11 digits entered, validate the mobile number
+
+    ; Continue asking for mobile number if less than 11 digits
+                           jmp  input_mobile_loop
+
+    invalid_char:          
+    ; Display error message for invalid character input
+                           mov  dx, offset invalid_input_msg
+                           call print_string                     ; Print "Invalid character, please enter a digit."
+
+    ; Reset buffer and start input again
+                           mov  si, offset contact_phone         ; Reset the buffer pointer
+                           mov  cx, 0                            ; Reset the character counter
+                           jmp  input_mobile_loop                ; Restart input
+
+    validate_mobile:       
+    ; Mobile number validation (check length and content)
+                           cmp  cx, 11                           ; Validate if exactly 11 digits entered
+                           je   mobile_valid                     ; If valid, proceed to next step
+    ; If invalid, display error and ask for input again
+                           mov  dx, offset invalid_length_msg
+                           call print_string                     ; Print "Invalid mobile number, must be 11 digits."
+                           jmp  get_mobile_number                ; Restart mobile number input
+
+    mobile_valid:          
+    ; Proceed with valid mobile number
+    ; You can add the logic to store the contact here
+                           ret
+get_mobile_number endp
+
+get_char proc
+    ; Function to read a single character from user input
+                           mov  ah, 01h                          ; DOS function to read character from standard input
+                           int  21h                              ; Call DOS interrupt
+                           ret
+get_char endp
+
+edit_contact proc
+    ; Code to edit a contact
+                           lea  dx, edit_contact_msg             ; Display edit contact message
+                           call print_string
+                           ret
+edit_contact endp
+
+show_contact proc
+ 
+    ; Check if the first character of the contact name is '$'
+                           mov  al, contact_phone
+                           cmp  al, '$'
+                           je   no_contact_saved
+    ; Display show contact message
+                           lea  dx, show_contact_msg
+                           call print_string
+
+
+
+    ; Display contact name
+                           lea  dx, contact_name_label
+                           call print_string
+                           lea  dx, contact_name
+                           call print_string
+
+    ; New line
+                           call newline
+
+    ; Display contact phone number
+                           lea  dx, contact_phone_label
+                           call print_string
+                           lea  dx, contact_phone
+                           call print_string
+
+                           ret
+
+    no_contact_saved:      
+                           lea  dx, no_contact_msg
+                           call print_string
+                           ret
+show_contact endp
+
+delete_contact proc
+    ; Code to delete a contact
+                           lea  dx, delete_contact_msg           ; Display delete contact message
+                           call print_string
+                           ret
+delete_contact endp
 
 display_menu proc
     ; Display every line of the menu
